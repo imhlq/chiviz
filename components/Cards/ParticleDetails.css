@@ -1,0 +1,18 @@
+.particle-parent {
+    position: relative;
+    z-index: 0;
+}
+
+.particle-header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url("/overlay.jpg");
+    background-size: cover;
+    mix-blend-mode: luminosity;
+    background-position: center;
+    opacity: .75;
+    z-index: -1;
+}
