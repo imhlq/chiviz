@@ -17,7 +17,7 @@ function VisualPage({ data, loading }) {
             data ? (
                 <div className='px-8'>
                     <VisualHeader jsonData={data} />
-                    <InputSection data={data?.Info} />
+                    <InputSection data={data?.Board} />
                     <OutputSection data={data?.Results} />
                 </div>
             ) : (

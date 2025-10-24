@@ -1,17 +1,19 @@
 // Vis Data Code Generated
+type CompactCascade = {
+  time: number;
+  iters: number;
+  ints: number;
+  parts: number;
+  eloss_avg: number;
+  eloss_std: number;
+  proc: Record<string, number>;
+
+}
+
 interface Interaction {
   process: string;
   p_in: { id: string; E: number };
   p_out: Array<{ id: string; E: number }>;
-}
-
-interface CascadeData {
-  time: number;
-  iters: Interaction[][];
-}
-
-interface LogData {
-  [setKey: string]: { [cascadeKey: string]: CascadeData };
 }
 
 interface Stats {
@@ -40,64 +42,6 @@ const INVERSE_PARTICLE_MAP: { [key: string]: string } = {
   'e+': 'Positron',
 };
 
-function formatLogData(logs: string): LogData {
-    const data: LogData = {};
-  
-    let currSet: string | null = null;
-    let currCascade: string | null = null;
-    let currIteration: number | null = null;
-  
-    logs.split('\n').forEach(line => {
-      if (line.trim() === '') return;
-  
-      if (line.startsWith("C|")) {
-        const [i_set, i_cascade, cascade_time] = line.trim().substring(2).split(",");
-        if (currSet !== i_set) {
-          currSet = i_set;
-          data[`Set${currSet}`] = {};
-          currCascade = null;
-        }
-  
-        if (currCascade !== i_cascade) {
-          currCascade = i_cascade;
-          data[`Set${currSet}`][currCascade] = { time: parseFloat(cascade_time), iters: [] };
-          currIteration = null;
-        }
-
-      } else if (line.startsWith("I|")) {
-        const i_iteration = parseInt(line.substring(2), 10);
-        if (currIteration !== i_iteration) {
-          data[`Set${currSet}`][currCascade!].iters.push([]);
-          currIteration = i_iteration;
-        }
-      } else {
-        const elements = line.trim().split(',');
-        const process = INVERSE_PROCESS_MAP[elements[0]] || elements[0];
-        const p_in_id = INVERSE_PARTICLE_MAP[elements[1]] || elements[1];
-
-        const interaction: Interaction = {
-          process: process,
-          p_in: { id: p_in_id, E: parseFloat(elements[2]) },
-          p_out: []
-        };
-  
-        if (elements.length > 3) {
-          for (let i = 3; i < elements.length; i += 2) {
-            const p_out_id = INVERSE_PARTICLE_MAP[elements[i]] || elements[i];
-            interaction.p_out.push({
-              id: p_out_id,
-              E: parseFloat(elements[i + 1])
-            });
-          }
-        }
-        
-        data[`Set${currSet}`][currCascade!].iters[currIteration!].push(interaction);
-      }
-    });
-  
-    return data;
-}
-
 
 function statsValue(array: number[]): Stats {
     if (array.length === 0) {
@@ -121,6 +65,22 @@ function statsValue(array: number[]): Stats {
         max: max_val,
         std_dev: std_dev
     };
+}
+
+function extractCompactCascade(debugJson) {
+  const cascades: any[] = [];
+  for (const k of Object.keys(debugJson)) {
+    if (k === 'Results' || k === 'Logs' || k === 'Board' || k === 'Info' ) continue;
+    const maybeSet = debugJson[k];
+    if (maybeSet && typeof maybeSet === 'object' && maybeSet.Cascades && typeof maybeSet.Cascades === 'object') {
+      for (const cascadeKey of Object.keys(maybeSet.Cascades)) {
+        const c = maybeSet.Cascades[cascadeKey];
+        cascades.push(c);
+      }
+    }
+  }
+
+  return cascades;
 }
 
 function generateStats(data: LogData) {
@@ -211,13 +171,104 @@ function generateStats(data: LogData) {
 
 // Note: In the browser, you would use file input or drag-and-drop to select the files, then handle them accordingly.
 export function generateVisualization(debugJson): Record<string, any> {
-    const data = formatLogData(debugJson.Logs);
-    const stats = generateStats(data);
-    delete debugJson.Logs;
-    debugJson.Results["n_sets"] = Object.keys(debugJson.Results).length;
-    debugJson.Results = {
-        ...debugJson.Results,
-        ...stats
-    };
+  if (!debugJson) return debugJson;
+  const compactCascade = extractCompactCascade(debugJson);
+  if (compactCascade.length === 0) {
+    debugJson.Results = debugJson.Results || {};
+    debugJson.Results["n_sets"] = debugJson.Results["n_sets"] || 0;
     return debugJson;
+  }
+  const cascade_times: number[] = [];
+  const cascade_iters_counts: number[] = [];
+  const cascade_interaction_counts: number[] = [];
+  const cascade_particle_counts: number[] = []; // not always present in compact -> keep nulls if missing
+  // per-interaction arrays cannot be reconstructed; we'll set aggregated stats from compact
+  const interaction_energy_losses: number[] = []; // we don't have per-interaction losses in compact -> leave empty
+  const iters_energy_losses: number[] = []; // as above
+  const cascade_energies: number[][] = []; // compact may include iter energy list; if not, push empty arrays
+  const cascade_proc_counters: Array<Record<string, number>> = [];
+  
+  for (const cc of compactCascade) {
+    // compact schema names in your Python: time, iter_count, interaction_count, eloss_mean, eloss_std, proc
+    const t = (cc.time !== undefined) ? Number(cc.time) : (cc.t !== undefined ? Number(cc.t) : null);
+    if (t !== null) cascade_times.push(t);
+
+    const iters = cc.iter_count !== undefined ? Number(cc.iter_count) : (cc.iters !== undefined ? Number(cc.iters) : null);
+    if (iters !== null) cascade_iters_counts.push(iters);
+
+    const ints = cc.interaction_count !== undefined ? Number(cc.interaction_count) : (cc.ints !== undefined ? Number(cc.ints) : null);
+    if (ints !== null) cascade_interaction_counts.push(ints);
+
+    // particle counts may be missing in compact; keep nulls if so
+    const parts = cc.particle_count !== undefined ? Number(cc.particle_count) : (cc.parts !== undefined ? Number(cc.parts) : null);
+    cascade_particle_counts.push(parts ?? 0);
+
+    // cascade energies: compact might include "energy_list" or "energy_iters" — try to pick one
+    if (Array.isArray(cc.energy_list)) {
+      cascade_energies.push(cc.energy_list.map(Number));
+    } else if (Array.isArray(cc.energy_iters)) {
+      cascade_energies.push(cc.energy_iters.map(Number));
+    } else {
+      // fallback: empty per-cascade energy arrays to keep shape compatible
+      cascade_energies.push([]);
+    }
+
+    // process counters: cc.proc is expected to be { procNameOrCode: count }
+    if (cc.proc && typeof cc.proc === 'object') {
+      // normalize keys to string names
+      const map: Record<string, number> = {};
+      for (const [k, v] of Object.entries(cc.proc)) {
+        map[String(k)] = Number(v);
+      }
+      cascade_proc_counters.push(map);
+    } else {
+      cascade_proc_counters.push({});
+    }
+
+    // We don't have per-interaction eloss arrays in compact; skip filling interaction_energy_losses
+  }
+
+  // compute cascade_interaction_counters_stats_list similar to the original generateStats
+  const all_interaction_keys = new Set<string>();
+  cascade_proc_counters.forEach(obj => Object.keys(obj).forEach(k => all_interaction_keys.add(k)));
+
+  const cascade_interaction_counters_stats_list = Array.from(all_interaction_keys).map(key => {
+    // gather values across cascades
+    const values: number[] = cascade_proc_counters.map(c => c[key] || 0);
+    const stat = statsValue(values);
+    return { name: key, ...stat };
+  });
+  
+  const resultStats = {
+    cascade_times: statsValue(cascade_times.filter(v => v !== null && !isNaN(v))),
+    cascade_iters_counts: statsValue(cascade_iters_counts.filter(v => v !== null && !isNaN(v))),
+    cascade_interaction_counts: statsValue(cascade_interaction_counts.filter(v => v !== null && !isNaN(v))),
+    cascade_particle_counts: statsValue(cascade_particle_counts.filter(v => v !== null && !isNaN(v))),
+    interaction_energy_losses: statsValue(interaction_energy_losses), // empty -> nulls
+    iters_energy_losses: statsValue(iters_energy_losses),               // empty -> nulls
+    cascade_energies: cascade_energies,
+    cascade_interaction_counters: cascade_interaction_counters_stats_list,
+  };
+
+  debugJson.Results = debugJson.Results || {};
+  debugJson.Results["n_sets"] = debugJson.Results["n_sets"] || (() => {
+    // estimate n_sets from compact input if possible
+    // if input used Results.sets, we can count sets there:
+    if (debugJson.Results && debugJson.Results.sets) {
+      return Object.keys(debugJson.Results.sets).length;
+    }
+    // else attempt to count top-level set keys
+    let count = 0;
+    for (const k of Object.keys(debugJson)) {
+      if (k === 'Board' || k === 'Info' || k === 'Results' || k === 'Logs') continue;
+      if (debugJson[k] && typeof debugJson[k] === 'object' && debugJson[k].Cascades) count++;
+    }
+    return count;
+  })();
+
+  debugJson.Results = {
+      ...debugJson.Results,
+      ...resultStats
+  };
+  return debugJson;
 }

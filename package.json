@@ -1,6 +1,6 @@
 {
     "name": "chiviz",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "Visualization components for Chimera",
     "main": "dist/index.tsx",
     "scripts": {
