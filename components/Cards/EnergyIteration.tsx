@@ -40,6 +40,8 @@ function PlotEnergyLine( {
                 label: "Iteration"
             },
             marks: [
+                Plot.gridX({strokeDasharray: "4 4"}),
+                Plot.gridY({strokeDasharray: "4 4"}),
                 Plot.lineY(data, {x: "x", y: "y", stroke: "cascade"}),
                 Plot.ruleX(data, Plot.pointerX({x: "x", py: "y", stroke: "red"})),
                 Plot.dot(data, Plot.pointerX({x: "x", y: "y", stroke: "red"})),

@@ -28,13 +28,13 @@ const InputSection = ( {data} ) => {
                 </Card>
 
                 {/* Particles */}
-                {/* <Card>
+                <Card>
                     <div className="flex flex-row flex-wrap justify-center gap-3">
                         {data.particles.map((particle, index) => (
-                            <ParticleCard type={particle.id} energy={particle.E} position_x={particle.x/r_bin_end} position_y={particle.y/r_bin_end} position_z={particle.z/r_bin_end} />
+                            <ParticleCard type={particle.id} energy={particle.E} position_x={particle.x} position_y={particle.y} position_z={particle.z} />
                         ))}
                     </div>
-                </Card> */}
+                </Card>
 
                 {/* Density Profile */}
                 <DensityProfileCard profiles={data.profiles} />

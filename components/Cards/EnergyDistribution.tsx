@@ -75,6 +75,7 @@ const PlotHist = ( {
     marginLeft = 50,
     marginTop = 20,
     marginBottom = 30,
+    marginRight = 50,
 } ) => {
     const containerRef = useRef(null);
     useEffect(() => {
@@ -82,8 +83,8 @@ const PlotHist = ( {
             marginLeft: marginLeft,
             marginTop: marginTop,
             marginBottom: marginBottom,
-            marginRight: 50,
-            width: width - marginLeft,
+            marginRight: marginRight,
+            width: width - marginLeft - marginRight,
             height: height - marginTop - marginBottom,
             y: {
                 grid: true, 
@@ -131,8 +132,8 @@ const EnergyDistributionCard = ( { data } ) => {
         setSelectedChannel(event.target.value);
     };
     const selectedSet = data[selectedSetIndex];
-    const flattenedData = flattenSetData(selectedSet);
-    console.log(flattenedData);
+    const flattenedData = flattenSetData(selectedSet.Output);
+    
     const filteredData = flattenedData.filter(item => item.channel === selectedChannel);
     return ( 
         <Card title="Energy Distribution">

@@ -26,7 +26,7 @@ const ParticleCard = ({type, energy, position_x, position_y, position_z}) => {
                     </div>
                 </div>
 
-                <div className="w-1/4">
+                {/* <div className="w-1/4">
                     <div className="flex flex-row items-start gap-3">
                         <div className="text-gray-500 dark:text-gray-400">x</div>
                         <div className="font-black text-current text-sm">{format_pos(position_x)}</div>
@@ -39,7 +39,7 @@ const ParticleCard = ({type, energy, position_x, position_y, position_z}) => {
                         <div className="text-gray-500 dark:text-gray-400">z</div>
                         <div className="font-black text-current text-sm">{format_pos(position_z)}</div>
                     </div>
-                </div>
+                </div> */}
             </div>
         </div>
     )

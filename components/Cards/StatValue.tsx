@@ -10,6 +10,9 @@ interface StatValue {
 }
 
 const formatValue = (value: number) => {
+    if (value === null || value === undefined) {
+        return "N/A";
+    }
     if (Number.isInteger(value)){
         return value.toLocaleString();
     } else {

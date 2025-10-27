@@ -21,10 +21,11 @@ const PlotInteractionHist = ( {
             width: width - marginLeft,
             height: height - marginTop - marginBottom,
             y: {
-                grid: true, 
+                grid: false, 
                 label: ""
             },
             x: {
+                grid: true,
                 axis: 'top',
                 label: ""
             },
@@ -36,6 +37,10 @@ const PlotInteractionHist = ( {
                         sort: {y: "x", reverse:true}, 
                         tip: {format: {name: true, min:true, max:true, stroke:false, x:false, y:false}}}
                     ),
+                Plot.link(data, {x1: 'min', x2: 'max', y: 'name', strokeWidth: 2, stroke: "#ccc", opacity: 1}),
+                Plot.tickX(data, {x: 'min', y: 'name', stroke: "#ccc", opacity: 0.7, inset: 16}),
+                Plot.tickX(data, {x: 'max', y: 'name', stroke: "#ccc", opacity: 0.7, inset: 16}),
+                Plot.tickX(data, {x: 'average', y: 'name', stroke: "#ccc", opacity: 0.7, inset: 16}),
             ],
         });
         containerRef.current.append(plot);
