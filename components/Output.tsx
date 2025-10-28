@@ -31,9 +31,9 @@ const OutputSection = ({data}) => {
                     <InteractionCounterCard data={data.cascade_interaction_counters} />
                 </div>
 
-                {/* <div className="col-span-full">
+                <div className="col-span-full">
                     <InteractionCounterPieCard data={data.cascade_interaction_counters}/>
-                </div> */}
+                </div>
                 
             </div>
         </section>

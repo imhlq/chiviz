@@ -1,0 +1,30 @@
+.plot-container {
+    position: relative; 
+}
+
+.tooltip {
+    position: absolute;
+    opacity: 0;
+    background-color: #333;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    white-space: nowrap;
+}
+
+
+.pie-label-group {
+    cursor: default;
+    font-size: 12px;
+}
+
+.pie-label-name {
+    font-weight: bold;
+}
+
+.pie-label-value {
+    fill: #4a5568;
+}
